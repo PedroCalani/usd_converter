@@ -9,7 +9,7 @@ class Window_converter(QtWidgets.QWidget):
 		super().__init__()
 
 		self.setWindowTitle("usd converter")
-		self.setFixedSize(640, 380)
+		self.setFixedSize(640, 460)
 		self.build_layout()
 
 	def build_layout(self):
@@ -19,16 +19,31 @@ class Window_converter(QtWidgets.QWidget):
 		lyt.setSpacing(8)
 		self.setLayout(lyt)
 
+		group_box1 = QtWidgets.QGroupBox()
+		lyt_gb1 = QtWidgets.QVBoxLayout()
+		group_box1.setLayout(lyt_gb1)
+		lyt.addWidget(group_box1)
+
+		group_box2 = QtWidgets.QGroupBox()
+		lyt_gb2 = QtWidgets.QVBoxLayout()
+		group_box2.setLayout(lyt_gb2)
+		lyt.addWidget(group_box2)
+
+		group_box3 = QtWidgets.QGroupBox()
+		lyt_gb3 = QtWidgets.QVBoxLayout()
+		group_box3.setLayout(lyt_gb3)
+		lyt.addWidget(group_box3)
+
 		# Comments guides.
 		folder_info = QtWidgets.QLabel(
 		"Select your houdini bin folder.\n"
 		"For example: "
 		"C:Program Files/Side Effects Software/Houdini20.0.506/bin"
 			)
-		lyt.addWidget(folder_info)
+		lyt_gb1.addWidget(folder_info)
 
 		lyt_h = QtWidgets.QHBoxLayout()
-		lyt.addLayout(lyt_h)
+		lyt_gb1.addLayout(lyt_h)
 		lyt_h.setAlignment(QtCore.Qt.AlignLeft)
 
 		# Houdini bin folder.
@@ -49,11 +64,11 @@ class Window_converter(QtWidgets.QWidget):
 			"Select your usd file.\n"
 			"Supported formats: .usd .usda"
 			)
-		lyt.addWidget(usd_info)
+		lyt_gb2.addWidget(usd_info)
 
 		# New Horizontal layout.
 		lyt_v = QtWidgets.QHBoxLayout()
-		lyt.addLayout(lyt_v)
+		lyt_gb2.addLayout(lyt_v)
 		lyt_v.setAlignment(QtCore.Qt.AlignLeft)
 		
 		# Field to select the usd file.
@@ -66,6 +81,40 @@ class Window_converter(QtWidgets.QWidget):
 		b_find_usd = QtWidgets.QPushButton("Browse")
 		b_find_usd.clicked.connect(self.select_usd)
 		lyt_v.addWidget(b_find_usd)
+
+		# Export folder info.
+		exp_folder_info = QtWidgets.QLabel(
+			"Select export folder.\n"
+			"If you do not choose a folder, It will use "
+			"same folder."
+			)
+		lyt_gb3.addWidget(exp_folder_info)
+
+		# New Layout.
+		lyt_h = QtWidgets.QHBoxLayout()
+		lyt_gb3.addLayout(lyt_h)
+		lyt_h.setAlignment(QtCore.Qt.AlignLeft)
+
+		# Export folder.
+		self.exp_folder = QtWidgets.QLineEdit()
+		self.exp_folder.setReadOnly(True)
+		self.exp_folder.setEnabled(False)
+		self.exp_folder.setStyleSheet("border: 2px solid grey;")
+		lyt_h.addWidget(self.exp_folder)
+
+		# Export folder button.
+		self.b_exp_folder = QtWidgets.QPushButton("Browse")
+		self.b_exp_folder.clicked.connect(self.choose_exp_folder)
+		self.b_exp_folder.setEnabled(False)
+		lyt_h.addWidget(self.b_exp_folder)
+
+		# Check use original folder.
+		self.check_exp_folder = QtWidgets.QCheckBox(
+			"Same folder as the original file"
+			)
+		self.check_exp_folder.setChecked(1)
+		self.check_exp_folder.toggled.connect(self.change_exp_path)
+		lyt_gb3.addWidget(self.check_exp_folder)
 
 		# Checkbox with extra settings.
 		self.check_notification = QtWidgets.QCheckBox(
@@ -142,6 +191,9 @@ class Window_converter(QtWidgets.QWidget):
 		if usd_selected != "":
 			self.usd_file.setText(usd_selected)
 			self.check_usd_file(usd_selected)
+			if self.check_exp_folder.isChecked():
+				usd_dir = os.path.dirname(usd_selected)
+				self.exp_folder.setText(usd_dir)
 		else:
 			self.check_usd_file(self.usd_file.text())
 
@@ -150,15 +202,66 @@ class Window_converter(QtWidgets.QWidget):
 
 		extension = os.path.splitext(file)[1].lower()
 
-		if extension == ".usd":
+		if extension == ".usd" or extension == ".usda":
 			self.usd_file.setStyleSheet("border: 2px solid green;")
-			return True
-		elif extension == ".usda":
-			self.usd_file.setStyleSheet("border: 2px solid green;")
+			if self.check_exp_folder.isChecked():
+				self.exp_folder.setStyleSheet(
+					"border: 2px solid green;"
+					)
+
 			return True
 		else:
 			self.usd_file.setStyleSheet("border: 2px solid red;")
 			return False
+
+	def choose_exp_folder(self):
+		"""Choose a custom export path."""
+
+		if self.check_exp_folder.isChecked():
+			return
+			
+		info = "Select your custom export folder"
+		
+		current_exp_f = self.exp_folder.text()
+		
+		if not os.path.exists(current_exp_f):
+			init_dir = self.folder.text()
+		else:
+			init_dir = current_exp_f
+		
+		# Get Folder.
+		fpath = QtWidgets.QFileDialog.getExistingDirectory(
+				self, info, current_exp_f
+				)
+		
+		if fpath != "" and os.path.exists(fpath):
+			self.exp_folder.setText(fpath)
+			self.exp_folder.setStyleSheet("border: 2px solid green")
+		else:
+			self.exp_folder.setText(self.exp_folder.text())
+
+	def change_exp_path(self, status):
+		"""Uses the original path as save path."""
+
+		if status:
+			self.exp_folder.setEnabled(False)
+			self.b_exp_folder.setEnabled(False)
+
+			# Get folder path.
+			usd = self.usd_file.text()
+			usd_dir = os.path.dirname(usd)
+
+			# Copy that folder path.
+			self.exp_folder.setText(usd_dir)
+
+			correct_usd = self.check_usd_file(usd)
+			if correct_usd:
+				self.exp_folder.setStyleSheet(
+					"border: 2px solid green"
+					)
+		else:
+			self.exp_folder.setEnabled(True)
+			self.b_exp_folder.setEnabled(True)
 
 	def export(self, extension):
 		"""Export the new usd file."""
@@ -170,12 +273,16 @@ class Window_converter(QtWidgets.QWidget):
 		if can_export:
 
 			usdcat_exe = self.folder.text() + "/usdcat"
-			file = self.usd_file.text()
 
-			usd_dir = os.path.dirname(file)
+			file = self.usd_file.text()
 
 			init_usd = os.path.basename(file)
 			usd_name = os.path.splitext(init_usd)[0]
+
+			if self.exp_folder == "":
+				usd_dir = os.path.dirname(file)
+			else:
+				usd_dir = self.exp_folder.text()		
 
 			out_usd = f"{usd_dir}/{usd_name}.{extension}"
 
@@ -195,7 +302,6 @@ class Window_converter(QtWidgets.QWidget):
 				notification.setText("Your file has been converted")
 				notification.setWindowTitle("Process finished")
 				notification.show()
-
 
 	def check_to_export(self):
 		"""Check valid folder and usd file."""
