@@ -172,15 +172,18 @@ class Window_converter(QtWidgets.QWidget):
 			usdcat_exe = self.folder.text() + "/usdcat"
 			file = self.usd_file.text()
 
+			usd_dir = os.path.dirname(file)
+
 			init_usd = os.path.basename(file)
-			init_usd_name = os.path.splitext(init_usd)[0]
-			out_usd_file = f"{init_usd_name}.{extension}"
+			usd_name = os.path.splitext(init_usd)[0]
+
+			out_usd = f"{usd_dir}/{usd_name}.{extension}"
 
 			subprocess.run([
 				usdcat_exe,
 				file,
 				"--out",
-				out_usd_file
+				out_usd
 				])
 
 			# Open directory with new file.

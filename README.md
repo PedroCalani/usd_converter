@@ -1,5 +1,5 @@
 # usd_converter
-This tool allows you to convert usd files to usda, and vice versa, immediately.
+This tool allows you to convert usd files to usda, and vice versa.
 
 ### How does it work?
 - Double click on the file USD_converter.pyw
