@@ -295,7 +295,7 @@ class Window_converter(QtWidgets.QWidget):
 
 			# Open directory with new file.
 			if self.check_open_folder.isChecked():
-				os.startfile(os.path.dirname(file))
+				os.startfile(os.path.dirname(out_usd))
 
 			if self.check_notification.isChecked():
 				notification = QtWidgets.QMessageBox(self)
